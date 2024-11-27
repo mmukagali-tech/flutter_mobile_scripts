@@ -1,0 +1,37 @@
+#!/bin/bash
+
+PROJECT_ROOT=$(pwd)
+export PROJECT_ROOT
+
+ANDROID_KEY_PROPERTIES=$PROJECT_ROOT/android/key.properties
+export ANDROID_KEY_PROPERTIES
+
+SECURE_FILES=$PROJECT_ROOT/.secure_files
+export SECURE_FILES
+
+UPLOAD_KEYSTORE="$SECURE_FILES/altin-upload-keystore.jks"
+export UPLOAD_KEYSTORE
+
+APK_FLUTTER_SYMBOLS=$PROJECT_ROOT/artifacts/android/symbols/apk
+export APK_FLUTTER_SYMBOLS
+
+AAB_FLUTTER_SYMBOLS=$PROJECT_ROOT/artifacts/android/symbols/aab
+export AAB_FLUTTER_SYMBOLS
+
+IPA_FLUTTER_SYMBOLS=$PROJECT_ROOT/artifacts/ios/symbols
+export IPA_FLUTTER_SYMBOLS
+
+PROJECT_RUBY_VERSION="3.3.0"
+export PROJECT_RUBY_VERSION
+
+PROJECT_FLUTTER_VERSION="3.22.2"
+export PROJECT_FLUTTER_VERSION
+
+EXPORT_OPTIONS_PLIST=$PROJECT_ROOT/ios/Runner/ExportOptions.plist
+export EXPORT_OPTIONS_PLIST
+
+TEMP_KEYCHAIN="temporary/altin-signing.keychain-db"
+export TEMP_KEYCHAIN
+
+TEMP_KEYCHAIN_PASSWORD="altin-signing"
+export TEMP_KEYCHAIN_PASSWORD
