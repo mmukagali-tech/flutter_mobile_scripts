@@ -16,7 +16,8 @@ usage() {
 
 # Ensure an argument is provided
 if [[ $# -ne 1 ]]; then
-  usage
+    echo "Invalid number of arguments"
+    usage
 fi
 
 
@@ -25,7 +26,8 @@ log_info "Incrementing app version... 🚀"
 export PATH="$HOME/.rbenv/shims:$HOME/.rbevn/bin:$PATH"
 eval "$(rbenv init -)"
 
-cd $PROJECT_ROOT/ && bundle exec fastlane increment_version type:$1 || {
+cd "$PROJECT_ROOT"
+bundle exec fastlane increment_version type:"$1" || {
     log_error "Failed to increment app version. 💔"
     exit 1
 }

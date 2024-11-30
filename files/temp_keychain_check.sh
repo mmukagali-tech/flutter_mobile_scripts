@@ -13,14 +13,14 @@ source "scripts/logger.sh"
 log_info "Checking temporary keychain $TEMP_KEYCHAIN... 🔍"
 
 if [[ ! -f "$HOME/Library/Keychains/$TEMP_KEYCHAIN" ]]; then
-  log_error "Keychain $TEMP_KEYCHAIN does not exist. 🚫"
-  exit 1
+    log_error "Keychain $TEMP_KEYCHAIN does not exist. 🚫"
+    exit 1
 fi
 
 if [[ $(security list-keychain -d user) != *"$TEMP_KEYCHAIN"* ]]; then
-  log_error "Keychain $TEMP_KEYCHAIN is not active. 🚫"
-  log_info "Run temp_keychain_delete.sh then temp_keychain_create.sh to recreate the keychain."
-  exit 1
+    log_error "Keychain $TEMP_KEYCHAIN is not active. 🚫"
+    log_info "Run temp_keychain_delete.sh then temp_keychain_create.sh to recreate the keychain."
+    exit 1
 fi
 
 log_success "Temporary keychain is active. 🎯"

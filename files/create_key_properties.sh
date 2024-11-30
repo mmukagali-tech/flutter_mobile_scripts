@@ -10,38 +10,54 @@ source "scripts/variables.sh"
 source "scripts/logger.sh"
 
 usage() {
-  echo "Usage: $0 --storePassword <storePassword> --keyPassword <keyPassword> --keyAlias <keyAlias>"
-  echo "  --storePassword  Password for the keystore"
-  echo "  --keyPassword    Password for the key"
-  echo "  --keyAlias       Alias of the key"
-  exit 1
+cat << EOF
+Usage: ${0##*/} [-h] [-s STOREPASSWORD] [PASSWORD] [-k KEYPASSWORD] [PASSWORD] [-a KEYALIAS] [ALIAS]
+Create key.properties file for signing the APK.
+
+    -h                Display help
+    -s STOREPASSWORD  Password for the keystore
+    -k KEYPASSWORD    Password for the key
+    -a KEYALIAS       Alias of the key
+EOF
 }
 
-# Parse command-line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --storePassword)
-        storePassword="$2"
-        shift 2
-        ;;
-        --keyPassword)
-        keyPassword="$2"
-        shift 2
-        ;;
-        --keyAlias)
-        keyAlias="$2"
-        shift 2
-        ;;
-        *)
-        echo "Unknown option: $1"
-        usage
-        ;;
+storePassword=""
+keyPassword=""
+keyAlias=""
+
+while getopts "s:k:a:h:" opt; do
+    case ${opt} in
+        h)
+            usage
+            exit 0
+            ;;
+        s)
+            storePassword=$OPTARG
+            ;;
+        k)
+            keyPassword=$OPTARG
+            ;;
+        a)
+            keyAlias=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            exit 1
+            ;;
+        :)
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            exit 1
+            ;;
     esac
 done
 
 # Check if required arguments are provided
 if [[ -z "$storePassword" || -z "$keyPassword" || -z "$keyAlias" ]]; then
-  usage
+    echo "Missing required arguments" 1>&2
+    usage
+    exit 1
 fi
 
 if [[ -z "$ANDROID_KEY_PROPERTIES" ]]; then
@@ -50,7 +66,7 @@ if [[ -z "$ANDROID_KEY_PROPERTIES" ]]; then
 fi
 
 log_info "Creating key.properties... 🔑"
-rm -f $ANDROID_KEY_PROPERTIES
+rm -f "$ANDROID_KEY_PROPERTIES"
 {
     echo "storePassword=$storePassword"
     echo "keyPassword=$keyPassword"

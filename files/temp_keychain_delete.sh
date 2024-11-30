@@ -13,7 +13,7 @@ source "scripts/logger.sh"
 # Check if keychain is not exists
 if [[ ! -f "$HOME/Library/Keychains/$TEMP_KEYCHAIN" ]]; then
   log_info "Keychain $TEMP_KEYCHAIN does not exist. 💔"
-  echo $(security list-keychain -d user)
+  security list-keychain -d user
   exit 0
 fi
 
@@ -27,4 +27,4 @@ security delete-keychain "$TEMP_KEYCHAIN" || {
 log_success "Keychain deleted successfully. 🚀"
 
 log_info "Listing keychains... 🔑"
-echo $(security list-keychain -d user)
+security list-keychain -d user

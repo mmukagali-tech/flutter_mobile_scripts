@@ -12,45 +12,49 @@ source "scripts/logger.sh"
 
 # Function to display usage instructions
 usage() {
-    echo "Usage: $0 \\
-    --certificate <certificatePath> \\
-    --certificatePassword <keyPassword> \\
-    --provisioningProfile <provisioningProfilePath>"
-    echo "  --certificate          Path to the .p12 certificate file"
-    echo "  --certificatePassword  Password for the certificate's private key"
-    echo "  --provisioningProfile  Path to the .mobileprovision file"
-    exit 1
+    echo "Usage: $0 [-h] [-c CERTIFICATE] [FILE] [-p PASSWORD] [PASSWORD] [-m PROFILE] [FILE]"
+    echo "  -h                    Display help"
+    echo "  -c CERTIFICATE        Path to the .p12 certificate file"
+    echo "  -p PASSWORD           Password for the certificate's private key"
+    echo "  -m PROFILE            Path to the .mobileprovision file"
 }
 
-if [ "$#" -eq 0 ]; then
-    usage
-fi
-
-# Parse command-line arguments
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --certificate)
-        certificatePath="$2"
-        shift 2
-        ;;
-        --certificatePassword)
-        keyPassword="$2"
-        shift 2
-        ;;
-        --provisioningProfile)
-        provisioningProfilePath="$2"
-        shift 2
-        ;;
-        *)
-        echo "Unknown option: $1"
-        usage
-        ;;
+while getopts ":c:p:m:h" opt; do
+    case ${opt} in
+        h)
+            usage
+            exit 0
+            ;;
+        c)
+            certificatePath=$OPTARG
+            ;;
+        p)
+            keyPassword=$OPTARG
+            ;;
+        m)
+            provisioningProfilePath=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            exit 1
+            ;;
+        :)
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            exit 1
+            ;;
     esac
 done
+
+echo "certificatePath: $certificatePath"
+echo "keyPassword: $keyPassword"
+echo "provisioningProfilePath: $provisioningProfilePath"
 
 # Check if required arguments are provided
 if [[ -z "$certificatePath" || -z "$keyPassword" || -z "$provisioningProfilePath" ]]; then
     usage
+    exit 1
 fi
 
 
@@ -58,6 +62,8 @@ fi
 log_info "Setting up iOS code signing... 🛠"
 
 sh scripts/files/temp_keychain_check.sh
+
+ls -l "$SECURE_FILES"
 
 if [[ ! -f "$certificatePath" ]]; then
     log_error "Certificate file not found. 🚫"

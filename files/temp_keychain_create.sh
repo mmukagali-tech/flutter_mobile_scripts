@@ -29,4 +29,4 @@ security list-keychain -d user -s "$TEMP_KEYCHAIN" $(security list-keychain -d u
 log_success "Temporary keychain created successfully. 🚀"
 
 log_info "Listing keychains... 🔑"
-echo $(security list-keychain -d user)
+security list-keychain -d user

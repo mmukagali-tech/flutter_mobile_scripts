@@ -9,33 +9,58 @@ set -e # Exit on error
 source "scripts/variables.sh"
 source "scripts/logger.sh"
 
-
 usage() {
-    echo "Usage: $0 [-d] [-f <flavor>]"
-    echo "  -d  Deploy"
-    echo "  -f  Flavor (production, development)"
-    exit 1
+cat <<EOF
+Usage: ${0##*/} [-hd] [-f FLAVOR] [FLAVOR (production, development)]
+Push changes to remote repository.
+
+    -h                Display help
+    -d                Deploy
+    -f FLAVOR         Flavor (production, development)
+EOF
 }
 
-while getopts "df:" opt; do
+need_deploy=0
+flavor=""
+
+# Parse command-line arguments
+while getopts "hdf:" opt; do
     case $opt in
-        d)
-            need_deploy=true
-            ;;
-        f)
-            flavor=$OPTARG
-            ;;
-        *)
-            usage
-            ;;
+    h)
+        usage
+        exit 0
+        ;;
+    d)
+        need_deploy=1
+        ;;
+    f)
+        flavor=$OPTARG
+        ;;
+    \?)
+        echo "Invalid option: $OPTARG" 1>&2
+        usage
+        exit 1
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument." 1>&2
+        usage
+        exit 1
+        ;;
     esac
 done
+
+# Check if required arguments are provided
+if [[ -z "$flavor" ]]; then
+    echo "Missing required arguments" 1>&2
+    usage
+    exit 1
+fi
 
 
 log_info "Pushing changes to remote repository... 🚀"
 
 pubspec_path="$PROJECT_ROOT/pubspec.yaml"
-version_line=$(grep "^version:" $pubspec_path)
+version_line=$(grep "^version:" "$pubspec_path")
 
 if [[ -z "$version_line" ]]; then
     log_error "Version not found in pubspec.yaml ❌"
@@ -65,11 +90,11 @@ git add .
 git commit -m "Version bump: $version"
 
 tag=""
-if [[ "$need_deploy" == true ]]; then
+if [[ $need_deploy -eq 1 ]]; then
     tag+="deploy"
 fi
 
-git push -u origin $current_branch
+git push -u origin "$current_branch"
 
 if [[ -n "$tag" ]]; then
     tag+="-$flavor"

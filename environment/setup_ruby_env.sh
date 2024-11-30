@@ -37,7 +37,7 @@ else
 fi
 
 echo "Checking rbenv $PROJECT_RUBY_VERSION version..."
-if ! rbenv versions | grep -q $PROJECT_RUBY_VERSION; then 
+if ! rbenv versions | grep -q "$PROJECT_RUBY_VERSION"; then 
     log_warning "Ruby $PROJECT_RUBY_VERSION not found. Installing... ⏳"
     rbenv install "$PROJECT_RUBY_VERSION" || {
         log_error "Failed to install Ruby $PROJECT_RUBY_VERSION. Exiting... 🚫"
@@ -51,7 +51,7 @@ fi
 log_info "Setting global Ruby version to $PROJECT_RUBY_VERSION..."
 export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
 eval "$(rbenv init -)"
-rbenv local $PROJECT_RUBY_VERSION
+rbenv local "$PROJECT_RUBY_VERSION"
 rbenv rehash
 
 current_ruby_version=$(ruby -v | awk '{print $2}')

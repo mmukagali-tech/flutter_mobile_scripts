@@ -15,7 +15,8 @@ log_info "Incrementing build number... 🚀"
 export PATH="$HOME/.rbenv/shims:$HOME/.rbevn/bin:$PATH"
 eval "$(rbenv init -)"
 
-cd $PROJECT_ROOT/ && bundle exec fastlane increment_build || {
+cd "$PROJECT_ROOT"
+bundle exec fastlane increment_build || {
     log_error "Failed to increment build number. 💔"
     exit 1
 }

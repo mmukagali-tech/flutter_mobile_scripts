@@ -10,25 +10,54 @@ source "scripts/variables.sh"
 source "scripts/logger.sh"
 
 usage() {
-  echo "Usage: $0 -g <googleServiceAccountKey> -b <buildType> -a <appId>"
-  echo "  -g  Path to the Google service account key"
-  echo "  -b  Build type (apk, aab, ipa)"
-  echo "  -a  Firebase app ID"
-  exit 1
+car <<EOF
+Usage: ${0##*/} [-h] [-g GOOGLE_SERVICE_ACCOUNT_KEY] [FILE] [-b BUILD_TYPE] [TYPE (apk, aab)] [-a APP_ID] [ID]
+Upload Flutter symbols to Firebase.
+
+    -h                              Display help
+    -g GOOGLE_SERVICE_ACCOUNT_KEY   Path to the Google service account key
+    -b BUILD_TYPE                   Build type (apk, aab, ipa)
+    -a APP_ID                       Firebase app ID
+EOF
 }
 
+googleServiceAccountKey=""
+buildType=""
+appId=""
+
 # Parse command-line arguments
-while getopts "g:b:a:" opt; do
-  case $opt in
-    g) googleServiceAccountKey="$OPTARG" ;;
-    b) buildType="$OPTARG" ;;
-    a) appId="$OPTARG" ;;
-    *) usage ;;
-  esac
+while getopts "hg:b:a:" opt; do
+    case $opt in
+    h)
+        usage
+        exit 0
+        ;;
+    g)
+        googleServiceAccountKey=$OPTARG
+        ;;
+    b)
+        buildType=$OPTARG
+        ;;
+    a)
+        appId=$OPTARG
+        ;;
+    \?)
+        echo "Invalid option: $OPTARG" 1>&2
+        usage
+        exit 1
+        ;;
+    :)
+        echo "Option -$OPTARG requires an argument." 1>&2
+        usage
+        exit 1
+        ;;
+    esac
 done
 
 if [[ -z "$googleServiceAccountKey" || -z "$buildType" || -z "$appId" ]]; then
-  usage
+    echo "Missing required arguments" 1>&2
+    usage
+    exit 1
 fi
 
 log_info "Uploading Flutter symbols to Firebase... 📤"
@@ -50,13 +79,16 @@ log_success "Google service account key found. ✅"
 
 log_info "Initializing flutter symbols source path based on build type... 🔍"
 case $buildType in
-  apk) sourcePath=$APK_FLUTTER_SYMBOLS ;;
-  aab) sourcePath=$AAB_FLUTTER_SYMBOLS ;;
-  ipa) sourcePath=$IPA_FLUTTER_SYMBOLS ;;
-  *) 
-    log_error "Invalid build type specified. 🚫"
-    exit 1
-    ;;
+    apk)
+        sourcePath=$APK_FLUTTER_SYMBOLS
+        ;;
+    aab)
+        sourcePath=$AAB_FLUTTER_SYMBOLS
+        ;;
+    *) 
+        log_error "Invalid build type specified. 🚫"
+        exit 1
+        ;;
 esac
 log_success "Source path initialized to $sourcePath. ✅"
 
@@ -68,7 +100,7 @@ fi
 log_success "Flutter symbols found. ✅"
 
 log_info "Uploading... 📤"
-firebase crashlytics:symbols:upload --app $appId $sourcePath || {
+firebase crashlytics:symbols:upload --app "$appId" "$sourcePath" || {
     log_error "Failed to upload Flutter symbols to Firebase. 💔"
     exit 1
 }
