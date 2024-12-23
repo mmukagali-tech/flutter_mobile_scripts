@@ -1,0 +1,226 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG && ($CI_COMMIT_TAG =~ /development/ || $CI_COMMIT_TAG =~ /production/)
+      when: always
+    - when: never
+
+variables:
+  SCRIPTS: $CI_PROJECT_DIR/scripts
+  ENVIRONMENT: ""
+
+default:
+  tags:
+    - example
+  cache:
+    - key: "$CI_PROJECT_NAME-dependencies"
+      paths:
+        - $CI_PROJECT_DIR/.fvm/
+        - $HOME/.pub-cache/
+        - $HOME/.pub-cache/bin/
+        - $CI_PROJECT_DIR/vendor/bundle/
+        - $CI_PROJECT_DIR/ios/Pods/
+
+stages:
+  - prepare
+  - code_quality
+  - build
+  - deploy
+
+.set_env: &set_env
+  - |
+    if [[ -n "$CI_COMMIT_TAG" ]]; then
+      if [[ "$CI_COMMIT_TAG" =~ development ]]; then
+        ENVIRONMENT="development"
+      elif [[ "$CI_COMMIT_TAG" =~ production ]]; then
+        ENVIRONMENT="production"
+      else
+        echo "No valid flavor found. ENVIRONMENT not set."
+      fi
+    else
+      echo "No commit tag found. ENVIRONMENT not set."
+    fi
+
+.setup_flutter: &setup_flutter
+  - sh $SCRIPTS/environment/setup_flutter_env.sh
+
+.setup_ci_tools: &setup_ci_tools
+  - sh $SCRIPTS/environment/setup_ruby_env.sh
+  - sh $SCRIPTS/dependencies/get.sh -g
+
+.setup_helper_tools: &setup_helper_tools
+  - sh $SCRIPTS/environment/setup_helper_env.sh
+
+setup:
+  stage: prepare
+  script:
+    - *setup_ci_tools
+    - *setup_helper_tools
+    - *setup_flutter
+    - sh $SCRIPTS/dependencies/clean.sh
+    - sh $SCRIPTS/dependencies/get.sh -f -i
+
+static_analysis:
+  stage: code_quality
+  before_script:
+    - sh $SCRIPTS/files/code_gen.sh
+  script:
+    - sh $SCRIPTS/code_check/analyze.sh -c
+  artifacts:
+    paths:
+      - analysis_report.json
+    when: on_success
+    expire_in: 1 week
+    reports:
+      codequality: analysis_report.json
+
+unit_tests:
+  stage: code_quality
+  before_script:
+    - sh $SCRIPTS/files/code_gen.sh
+  script:
+    - sh $SCRIPTS/code_check/test.sh -c
+  
+.android_build_job:
+  stage: build
+  before_script:
+    - *set_env
+    - sh $SCRIPTS/files/download_ci_secure_files.sh
+    - sh $SCRIPTS/files/code_gen.sh
+    - sh $SCRIPTS/environment/setup_config.sh -f $ENVIRONMENT
+    - make create_key_properties
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/artifacts/android/
+    when: on_success
+    expire_in: 1 week
+
+android_dev_build:
+  extends: .android_build_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /development/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /build/'
+      when: always
+    - when: manual
+  script:
+    - make build_dev_android
+
+android_prod_build:
+  extends: .android_build_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /production/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /build/'
+      when: always
+    - when: manual
+  script:
+    - make build_prod_android
+
+.ios_build_job:
+  stage: build
+  before_script:
+    - *set_env
+    - sh $SCRIPTS/files/download_ci_secure_files.sh
+    - sh $SCRIPTS/files/code_gen.sh
+    - sh $SCRIPTS/environment/setup_config.sh -f $ENVIRONMENT
+    - make keychain_create
+    - make ios_signing
+    - make export_options
+  after_script:
+    - make keychain_delete
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/artifacts/ios/
+    when: on_success
+    expire_in: 1 week
+
+ios_dev_build:
+  extends: .ios_build_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /development/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /build/'
+      when: always
+    - when: manual
+  script:
+    - make build_dev_ios
+
+ios_prod_build:
+  extends: .ios_build_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /production/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /build/'
+      when: always
+    - when: manual
+  script:
+    - make build_prod_ios
+
+.android_deploy_job:
+  stage: deploy
+  before_script:
+    - *set_env
+    - sh $SCRIPTS/files/download_ci_secure_files.sh
+    - sh $SCRIPTS/environment/setup_config.sh -f $ENVIRONMENT
+    - make upload_apk_flutter_symbols
+    - make upload_aab_flutter_symbols
+
+android_dev_deploy:
+  extends: .android_deploy_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /development/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /deploy/'
+      when: manual
+    - when: manual
+  dependencies:
+    - android_dev_build
+  script:
+    - echo "Deploying..."
+
+android_prod_deploy:
+  extends: .android_deploy_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /production/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /deploy/'
+      when: manual
+    - when: manual
+  dependencies:
+    - android_prod_build
+  script:
+    - make deploy_play_store
+
+.ios_deploy_job:
+  stage: deploy
+  before_script:
+    - *set_env
+    - sh $SCRIPTS/files/download_ci_secure_files.sh
+    - sh $SCRIPTS/environment/setup_config.sh -f $ENVIRONMENT
+    - make upload_dsyms
+
+ios_dev_deploy:
+  extends: .ios_deploy_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /development/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /deploy/'
+      when: manual
+    - when: manual
+  dependencies:
+    - ios_dev_build
+  script:
+    - make deploy_test_flight
+
+ios_prod_deploy:
+  extends: .ios_deploy_job
+  rules:
+    - if: '$CI_COMMIT_TAG !~ /production/'
+      when: never
+    - if: '$CI_COMMIT_TAG =~ /deploy/'
+      when: manual
+    - when: manual
+  dependencies:
+    - ios_prod_build
+  script:
+    - make deploy_test_flight

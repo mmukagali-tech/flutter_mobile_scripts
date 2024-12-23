@@ -11,21 +11,23 @@ source "scripts/logger.sh"
 
 usage() {
 cat << EOF
-Usage: ${0##*/} [-h] [-s STOREPASSWORD] [PASSWORD] [-k KEYPASSWORD] [PASSWORD] [-a KEYALIAS] [ALIAS]
+Usage: ${0##*/} [-h] [-s STOREPASSWORD] [PASSWORD] [-k KEYPASSWORD] [PASSWORD] [-a KEYALIAS] [ALIAS] [-f KEYSTORE] [FILE]
 Create key.properties file for signing the APK.
 
     -h                Display help
     -s STOREPASSWORD  Password for the keystore
     -k KEYPASSWORD    Password for the key
     -a KEYALIAS       Alias of the key
+    -f KEYSTORE       Path to the keystore file
 EOF
 }
 
 storePassword=""
 keyPassword=""
 keyAlias=""
+keyStore=""
 
-while getopts "s:k:a:h:" opt; do
+while getopts "s:k:a:h:f:" opt; do
     case ${opt} in
         h)
             usage
@@ -39,6 +41,9 @@ while getopts "s:k:a:h:" opt; do
             ;;
         a)
             keyAlias=$OPTARG
+            ;;
+        f)
+            keyStore=$OPTARG
             ;;
         \?)
             echo "Invalid option: $OPTARG" 1>&2
@@ -54,7 +59,7 @@ while getopts "s:k:a:h:" opt; do
 done
 
 # Check if required arguments are provided
-if [[ -z "$storePassword" || -z "$keyPassword" || -z "$keyAlias" ]]; then
+if [[ -z "$storePassword" || -z "$keyPassword" || -z "$keyAlias" || -z "$keyStore" ]]; then
     echo "Missing required arguments" 1>&2
     usage
     exit 1
@@ -65,13 +70,20 @@ if [[ -z "$ANDROID_KEY_PROPERTIES" ]]; then
     exit 1
 fi
 
+keyStore="$PROJECT_ROOT/$keyStore"
+
+if [[ ! -f "$keyStore" ]]; then
+    log_error "Keystore file not found. 🛑"
+    exit 1
+fi
+
 log_info "Creating key.properties... 🔑"
 rm -f "$ANDROID_KEY_PROPERTIES"
 {
     echo "storePassword=$storePassword"
     echo "keyPassword=$keyPassword"
     echo "keyAlias=$keyAlias"
-    echo "storeFile=$UPLOAD_KEYSTORE"
+    echo "storeFile=$keyStore"
 } > "$ANDROID_KEY_PROPERTIES" || {
     log_error "Failed to create key.properties. 🚫"
     exit 1

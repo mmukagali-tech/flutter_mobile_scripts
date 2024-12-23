@@ -11,26 +11,31 @@ source "scripts/logger.sh"
 
 usage() {
 cat <<EOF
-Usage: ${0##*/} [-h] [-k API_KEY_ID] [ID] [-i API_ISSUER_ID] [ID] [-f API_KEY_FILE] [FILE]
+Usage: ${0##*/} [-h] [-b BUNDLE_ID] [ID] [-k API_KEY_ID] [ID] [-i API_ISSUER_ID] [ID] [-f API_KEY_FILE] [FILE]
 Deploy to TestFlight.
 
     -h                Display help
+    -b BUNDLE_ID      Bundle ID of the app
     -k API_KEY_ID     App Store Connect API Key ID
     -i API_ISSUER_ID  App Store Connect API Issuer ID
     -f API_KEY_FILE   App Store Connect API Key File
 EOF
 }
 
+bundle_id=""
 api_key_id=""
 api_issuer_id=""
 api_key_file=""
 
 # Parse command-line arguments
-while getopts "hk:i:f:" opt; do
+while getopts "hb:k:i:f:" opt; do
     case $opt in
     h)
         usage
         exit 0
+        ;;
+    b)
+        bundle_id=$OPTARG
         ;;
     k)
         api_key_id=$OPTARG
@@ -55,7 +60,7 @@ while getopts "hk:i:f:" opt; do
 done
 
 # Check if required arguments are provided
-if [[ -z "$api_key_id" || -z "$api_issuer_id" || -z "$api_key_file" ]]; then
+if [[ -z "$bundle_id" || -z "$api_key_id" || -z "$api_issuer_id" || -z "$api_key_file" ]]; then
     echo "Missing required arguments" 1>&2
     usage
     exit 1
@@ -88,7 +93,7 @@ eval "$(rbenv init -)"
 
 log_info "Deploying to TestFlight using fastlane... 🚀"
 cd "$PROJECT_ROOT"/ios/
-bundle exec fastlane tf_deploy api_key_id:"${api_key_id}" api_issuer_id:"${api_issuer_id}" api_key_file:"$PROJECT_ROOT/${api_key_file}" ipa:"${ipaPath}" || {
+bundle exec fastlane tf_deploy app_identifier:"${bundle_id}" api_key_id:"${api_key_id}" api_issuer_id:"${api_issuer_id}" api_key_file:"$PROJECT_ROOT/${api_key_file}" ipa:"${ipaPath}" || {
     log_error "Failed to deploy to TestFlight. 💔"
     exit 1
 }

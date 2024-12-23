@@ -20,26 +20,26 @@ EOF
 }
 
 # Parse command-line arguments
-while getopts "f:" opt; do
-  case $opt in
-    h)
-        usage
-        exit 0
-        ;;
-    f)
-        flavor="$OPTARG"
-        ;;
-    \?)
-        echo "Invalid option: $OPTARG" 1>&2
-        usage
-        exit 1
-        ;;
-    :)
-        echo "Invalid option: $OPTARG requires an argument" 1>&2
-        usage
-        exit 1
-        ;;
-  esac
+while getopts "hf:" opt; do
+    case $opt in
+        h)
+            usage
+            exit 0
+            ;;
+        f)
+            flavor="$OPTARG"
+            ;;
+        \?)
+            echo "Invalid option: $OPTARG" 1>&2
+            usage
+            exit 1
+            ;;
+        :)
+            echo "Invalid option: $OPTARG requires an argument" 1>&2
+            usage
+            exit 1
+            ;;
+    esac
 done
 
 # Check if required arguments are provided
@@ -49,14 +49,19 @@ if [[ -z "$flavor" ]]; then
   exit 1
 fi
 
+if [[ ! -f "$APP_CONFIG" ]]; then
+  log_error "Missing $APP_CONFIG file. 💔"
+  exit 1
+fi
+
 log_info "Building iOS... 🍏"
 fvm flutter build ipa \
     --release \
     --obfuscate \
-    --split-debug-info=$IPA_FLUTTER_SYMBOLS \
-    --export-options-plist=$EXPORT_OPTIONS_PLIST \
-    --dart-define BUILD_TYPE=$flavor \
-    --dart-define-from-file config/configs.json || {
+    --split-debug-info="$IPA_FLUTTER_SYMBOLS" \
+    --export-options-plist="$EXPORT_OPTIONS_PLIST" \
+    --dart-define BUILD_TYPE="$flavor" \
+    --dart-define-from-file "$APP_CONFIG" || {
         log_error "Failed to build iOS. 💔"
         exit 1
     }

@@ -65,19 +65,13 @@ while getopts "hfigF" opt; do
     esac
 done
 
-is_flutter_got() {
-    [[ -f ".flutter-plugins-dependencies" ]]
-}
-if [[ $get_flutter -eq 1 || $force -eq 1 || ! $(is_flutter_get) ]]; then
+if [[ $get_flutter -eq 1 || $force -eq 1 ]]; then
     log_info "Getting Flutter dependencies... 📦"
     fvm flutter pub get
     log_success "Flutter dependencies fetched. ✅"
 fi
 
-is_ios_got() {
-    [[ -d "ios/Pods" || -d "ios/Podfile.lock" ]]
-}
-if [[ $get_ios -eq 1 || $force -eq 1 || ! $(is_ios_got) ]]; then
+if [[ $get_ios -eq 1 || $force -eq 1 ]]; then
     log_info "Getting iOS dependencies... 📦"
     export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
     eval "$(rbenv init -)"
@@ -90,10 +84,9 @@ if [[ $get_ios -eq 1 || $force -eq 1 || ! $(is_ios_got) ]]; then
     log_success "iOS dependencies fetched. ✅"
 fi
 
-is_gems_got() {
-    [[ -d "vendor/bundle" ]]
-}
-if [[ $get_gems -eq 1 || $force -eq 1 || ! $(is_gems_got) ]]; then
+if [[ $get_gems -eq 1 || $force -eq 1 ]]; then
+    export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
+    eval "$(rbenv init -)"
     if ! command -v bundle > /dev/null; then
         log_warning "Bundler not found. Installing... 🔧"
         gem install bundler || {

@@ -9,9 +9,6 @@ export ANDROID_KEY_PROPERTIES
 SECURE_FILES=$PROJECT_ROOT/.secure_files
 export SECURE_FILES
 
-UPLOAD_KEYSTORE="$SECURE_FILES/altin-upload-keystore.jks"
-export UPLOAD_KEYSTORE
-
 ARTIFACTS=$PROJECT_ROOT/artifacts
 export ARTIFACTS
 
@@ -33,8 +30,20 @@ export PROJECT_FLUTTER_VERSION
 EXPORT_OPTIONS_PLIST=$PROJECT_ROOT/ios/Runner/ExportOptions.plist
 export EXPORT_OPTIONS_PLIST
 
-TEMP_KEYCHAIN="temporary/altin-signing.keychain-db"
+TEMP_KEYCHAIN="temporary/example-signing.keychain-db"
 export TEMP_KEYCHAIN
 
-TEMP_KEYCHAIN_PASSWORD="altin-signing"
+TEMP_KEYCHAIN_PASSWORD="example-signing"
 export TEMP_KEYCHAIN_PASSWORD
+
+APP_CONFIG=$PROJECT_ROOT/configs/app_config.json
+export APP_CONFIG
+
+CONFIG=$SECURE_FILES/config.yml
+export CONFIG
+
+PROD_CONFIG=$SECURE_FILES/prod_config.yml
+export PROD_CONFIG
+
+DEV_CONFIG=$SECURE_FILES/dev_config.yml
+export DEV_CONFIG

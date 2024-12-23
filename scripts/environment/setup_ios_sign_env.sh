@@ -47,16 +47,12 @@ while getopts ":c:p:m:h" opt; do
     esac
 done
 
-echo "certificatePath: $certificatePath"
-echo "keyPassword: $keyPassword"
-echo "provisioningProfilePath: $provisioningProfilePath"
 
 # Check if required arguments are provided
 if [[ -z "$certificatePath" || -z "$keyPassword" || -z "$provisioningProfilePath" ]]; then
     usage
     exit 1
 fi
-
 
 
 log_info "Setting up iOS code signing... 🛠"
